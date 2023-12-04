@@ -19,7 +19,7 @@ with open(".env", "r") as f:
     line = f.readline()
     elems = line.split("=")
     if len(elems) == 2:
-        token = elems[1]
+        token = elems[1].strip()
 
 if token == "not_set":
     print("No token available - exiting")
