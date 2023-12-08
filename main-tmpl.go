@@ -55,9 +55,13 @@ func part02() {
 	fmt.Printf("Result part 02: %v\n", total)
 }
 
-func getInput() []string {
+func getInput(inputs ...string) []string {
 	if TESTMODE {
-		return tools.ReadInputString(testinput)
+		input := testinput
+		if len(inputs) > 0 {
+			input = inputs[0]
+		}
+		return tools.ReadInputString(input)
 	} else {
 		return tools.ReadInputFile(*inputfile)
 	}
