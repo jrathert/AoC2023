@@ -64,6 +64,17 @@ func ReadInts(s string) []int {
 	return values
 }
 
+// Read all ints in a string and return their values as []int
+func ReadSignedInts(s string) []int {
+	re := regexp.MustCompile(`[\+\-0-9]+`)
+	elems := re.FindAllString(s, -1)
+	values := make([]int, len(elems))
+	for i, val := range elems {
+		values[i] = Str2Int(val)
+	}
+	return values
+}
+
 // greatest common divisor (GCD) via Euclidean algorithm
 func GCD(a, b int) int {
 	for b != 0 {
