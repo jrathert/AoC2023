@@ -97,7 +97,7 @@ func part01() {
 	for _, line := range lines {
 		maze.AddLine(strings.TrimSpace(line))
 	}
-	fmt.Printf("%v\n", maze)
+	// fmt.Printf("%v\n", maze)
 
 	start, ok := maze.FindField('S')
 	if !ok {
