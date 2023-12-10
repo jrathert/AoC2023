@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 )
 
 var TESTMODE = true
@@ -89,6 +90,8 @@ func getNumTest(num int) string {
 }
 
 func part01() {
+	startTime := time.Now()
+
 	lines := getInput()
 	var maze tools.Matrix
 	for _, line := range lines {
@@ -149,11 +152,13 @@ func part01() {
 
 	}
 	//total := max(lengths[0], lengths[1], lengths[2], lengths[3])
-	fmt.Printf("Result part 01: max distance %v\n\n", total)
+
+	elapsed := time.Since(startTime)
+	fmt.Printf("Result part 01 (%v): max distance %v\n\n", elapsed, total)
 }
 
 func part02() {
-
+	startTime := time.Now()
 	// build maze
 	lines := getInput(getNumTest(1))
 	var maze tools.Matrix
@@ -247,7 +252,8 @@ func part02() {
 	}
 	// fmt.Printf("%v\n", copytools.Maze)
 
-	fmt.Printf("Result part 01 and 02: distance = %v; inner points = %v\n\n", distance, inner)
+	elapsed := time.Since(startTime)
+	fmt.Printf("Result part 02 (%v): distance = %v; inner points = %v\n\n", elapsed, distance, inner)
 }
 
 func replaceStartChar(maze *tools.Matrix, start tools.Position) tools.Position {
