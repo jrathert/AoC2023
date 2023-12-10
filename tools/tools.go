@@ -1,3 +1,10 @@
+/*
+ * Tools
+ *
+ * Several helper functions
+ *
+ * MIT License, Copyright (c) 2023 Jonas Rathert
+ */
 package tools
 
 import (
