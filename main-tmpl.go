@@ -12,6 +12,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"time"
 )
 
 var TESTMODE = true
@@ -34,6 +35,7 @@ var testinput = `xxx
 `
 
 func part01() {
+	startTime := time.Now()
 	cnt := 0
 	total := 0
 	lines := getInput()
@@ -41,18 +43,22 @@ func part01() {
 		log.Printf("Processing line %v with len %v\n", cnt, len(line))
 		total++
 	}
-	fmt.Printf("Result part 01: %v\n", total)
+	elapsed := time.Since(startTime)
+	fmt.Printf("Result part 01 (%v): %v\n\n", elapsed, total)
 }
 
 func part02() {
-	cnt := 0
-	total := 0
-	lines := getInput()
-	for _, line := range lines {
-		log.Printf("Processing line %v with len %v\n", cnt, len(line))
-		total++
-	}
-	fmt.Printf("Result part 02: %v\n", total)
+	// startTime := time.Now()
+	// cnt := 0
+	// total := 0
+	// lines := getInput()
+	// for _, line := range lines {
+	// 	log.Printf("Processing line %v with len %v\n", cnt, len(line))
+	// 	total++
+	// }
+	// elapsed := time.Since(startTime)
+	// fmt.Printf("Result part 01 (%v): %v\n\n", elapsed, total)
+	fmt.Println("Part 02 not implemented yet")
 }
 
 func getInput(inputs ...string) []string {
