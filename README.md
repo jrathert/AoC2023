@@ -29,7 +29,7 @@ another just to download the input
 
 ### Access to input files
 
-Of course, downloading the input from the python scrips only works if the input is already available on the website (i.e. it must be at least than midnight EST/UTC-5). Also, to be able to access the input, you need to put your AoC session variable into the `.env` file - it will be read and used by the python scripts:
+Of course, downloading the input from the python scripts only works if the input is already available on the website (i.e. it must be at least than midnight EST/UTC-5). Also, to be able to access the input, you need to put your AoC session variable into the `.env` file - it will be read and used by the python scripts:
 
 ```
 sessiontoken=abcdefgh12345678...
