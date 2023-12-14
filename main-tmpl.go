@@ -18,6 +18,8 @@ import (
 var TESTMODE = true
 var nt = flag.Bool("nt", false, "exec no test mode")
 var inputfile = flag.String("f", "input.txt", "name of input file")
+var part1only = flag.Bool("1", false, "run part 1 only")
+var part2only = flag.Bool("2", false, "run part 2 only")
 
 func main() {
 	flag.Parse()
@@ -27,8 +29,12 @@ func main() {
 	log.SetPrefix("  ")
 	log.SetFlags(0)
 
-	part01()
-	part02()
+	if !*part2only {
+		part01()
+	}
+	if !*part1only {
+		part02()
+	}
 }
 
 var testinput = `xxx
@@ -41,8 +47,9 @@ func part01() {
 	lines := getInput()
 	for _, line := range lines {
 		log.Printf("Processing line %v with len %v\n", cnt, len(line))
-		total++
+		cnt++
 	}
+	total = cnt
 	elapsed := time.Since(startTime)
 	fmt.Printf("Result part 01 (%v): %v\n\n", elapsed, total)
 }
