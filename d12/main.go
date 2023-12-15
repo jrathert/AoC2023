@@ -1,9 +1,12 @@
 /*
  * Day 12 of AoC 2023
  *
- * Idea: This is the hardest day for me so far. Got part 1 done recursively after many different approaches,
- * and with running into a thousand problems/bugs. Finally works, but does not scale - part 2
- * is not implemented yet...
+ * Idea: This is the hardest day for me so far. Got part 1 done recursively after
+ * many different approaches,and with running into a thousand problems/bugs.
+ * Finally worked, but did not scale
+ * Adding a cache (6 lines of code) made part 2 work - but again took me quite
+ * some time.
+ * Now it is superfast. But recursion is still not my hometurf...
  *
  * MIT License, Copyright (c) 2023 Jonas Rathert
  */
@@ -22,6 +25,8 @@ import (
 var TESTMODE = true
 var nt = flag.Bool("nt", false, "exec no test mode")
 var inputfile = flag.String("f", "input.txt", "name of input file")
+var part1only = flag.Bool("1", false, "run part 1 only")
+var part2only = flag.Bool("2", false, "run part 2 only")
 
 func main() {
 	flag.Parse()
@@ -31,17 +36,26 @@ func main() {
 	log.SetPrefix("  ")
 	log.SetFlags(0)
 
-	part01()
-	//part02()
+	if !*part2only {
+		part01()
+	}
+	if !*part1only {
+		part02()
+	}
 }
 
 type Pump struct {
-	val       int
-	length    int
-	front     int
-	back      int
+	val       int // value
+	length    int // value + 1, as we need a "."
+	front     int // cumulated length of all before
+	back      int // cumulated length of all after
 	re        *regexp.Regexp
-	positions []int
+	valchache map[int]int
+}
+
+func (p Pump) String() string {
+	s := fmt.Sprintf("[%v > %v > %v (%v)]", p.front, p.length, p.back, p.front+p.length+p.back)
+	return s
 }
 
 func makePumps(vals []int) []Pump {
@@ -51,10 +65,11 @@ func makePumps(vals []int) []Pump {
 	for i := range vals {
 		p := Pump{}
 		p.val = vals[i]
-		p.length = vals[i] + 1 // incl "."
-		p.front = tools.SumInts(vals[0:i]) + (i - 0)
+		p.length = vals[i] + 1                 // incl "."
+		p.front = tools.SumInts(vals[0:i]) + i // there are i elements before i
 		p.back = tools.SumInts(vals[i+1:]) + (len(vals) - (i + 1))
 		p.re = regexp.MustCompile(fmt.Sprintf(`[#\?]{%v}[\?\.]`, p.val))
+		p.valchache = make(map[int]int)
 		pumps[i] = p
 	}
 	return pumps
@@ -68,18 +83,17 @@ var testinput = `???.### 1,1,3
 ?###???????? 3,2,1`
 
 func numMatches(pumps []Pump, idx int, line string) int {
-	// if len(pumps) == 0 {
-	// 	if strings.Contains(line, "#") {
-	// 		fmt.Printf("ERR No more pumps, but remaining string is '%v'\n", line)
-	// 		return -1
-	// 	} else {
-	// 		return 1
-	// 	}
-	// }
 
 	// buf := strings.Repeat("  ", idx)
 
 	p := pumps[0]
+
+	// check if cached
+	v, ok := p.valchache[idx]
+	if ok {
+		return v
+	}
+
 	// fmt.Printf("%vExamining %v in line %v\n", buf, p.val, line)
 	if p.length+p.back > len(line) {
 		// fmt.Printf("%vNot enough space (%v) in remaining string '%v'\n", buf, p.length+p.back, line)
@@ -92,20 +106,21 @@ func numMatches(pumps []Pump, idx int, line string) int {
 		// fmt.Printf("%vCannot find %v in remaining string '%v'\n", buf, p.val, line)
 		return 0
 	} else if m[0] > 0 && strings.Contains(line[:m[0]], "#") {
-		// fmt.Printf("%vCannot jum over '#' with %v in string '%v'\n", buf, p.val, line)
+		// fmt.Printf("%vCannot jump over '#' with %v in string '%v'\n", buf, p.val, line)
 		return 0
 	}
 	newstart := m[0] + p.length
 	// fmt.Printf("%vMatch in pos %v of len %v (%v)\n", buf, m[0], m[1]-m[0], newstart)
 
 	retval := 0
+	remain := len(line)
 	if len(pumps) > 1 {
-		if newstart > len(line) {
+		if newstart+p.back > remain {
 			// fmt.Printf("%vRemaining line too short/empty - but %v pump(s) remaining\n", buf, len(pumps)-1)
 			return 0
 		}
 		// fmt.Printf("%vCalling for remaining (%v) pumps in remaining string '%v'\n", buf, len(pumps)-1, line[newstart:])
-		val := numMatches(pumps[1:], idx+1, line[newstart:])
+		val := numMatches(pumps[1:], idx+newstart, line[newstart:])
 		if val != -1 {
 			retval += val
 		}
@@ -113,16 +128,16 @@ func numMatches(pumps []Pump, idx int, line string) int {
 
 	// match - now check if there is room to step one char
 	// (only works if first char is  '?' and last is not '.')
-	if byte(line[m[0]]) == '?' && byte(line[m[1]-1]) != '.' {
+	if byte(line[m[0]]) == '?' && byte(line[m[1]-1]) != '.' && m[0]+1+p.back < remain {
 		// yes, there is an option, follow that path instead
 		// fmt.Printf("%vTrying to shift (%v) one position in remaining string '%v'\n", buf, p.val, line[m[0]:])
-		cnt := numMatches(pumps, idx, line[m[0]+1:])
+		cnt := numMatches(pumps, idx+m[0]+1, line[m[0]+1:])
 		if cnt != -1 {
 			retval += cnt
 		}
-	} else if !strings.Contains(line[m[0]:m[1]], "#") {
+	} else if !strings.Contains(line[m[0]:m[1]], "#") && newstart+p.back < remain {
 		// fmt.Printf("%vTrying to shift (%v) at end of ??? position '%v'\n", buf, p.val, line[m[0]:])
-		cnt := numMatches(pumps, idx, line[newstart:])
+		cnt := numMatches(pumps, idx+newstart, line[newstart:])
 		if cnt != -1 {
 			retval += cnt
 		}
@@ -132,13 +147,16 @@ func numMatches(pumps []Pump, idx int, line string) int {
 
 	if len(pumps) == 1 {
 		// this was the last pump
-		if newstart < len(line) && strings.Contains(line[newstart:], "#") {
+		if newstart < remain && strings.Contains(line[newstart:], "#") {
 			// fmt.Printf("%vNo more pumps, but remaining string is '%v'\n", buf, line[newstart:])
 			return retval
 		}
 
 		retval += 1
 	}
+
+	// cache value for next time
+	p.valchache[idx] = retval
 
 	// fmt.Printf("%vReturning %v\n", buf, retval)
 	return retval
@@ -151,14 +169,14 @@ func part01() {
 	total := 0
 	lines := getInput()
 	for _, line := range lines {
-		fmt.Printf("%v (%v): %v\n", cnt, len(line), line)
+		// fmt.Printf("%v (%v): %v\n", cnt, len(line), line)
 		parts := strings.Split(line, " ")
 		vals := tools.ReadInts(parts[1])
 		pumps := makePumps(vals)
 		// fmt.Printf("%v\n", pumps)
 		options := numMatches(pumps, 0, parts[0]+".")
-		fmt.Printf("%v: '%v' - %v arrangement(s)\n", cnt, line, options)
-		fmt.Println("==============================================================")
+		// fmt.Printf("%v: '%v' - %v arrangement(s)\n", cnt, line, options)
+		// fmt.Println("==============================================================")
 		total += options
 		cnt++
 	}
@@ -172,7 +190,7 @@ func part02() {
 	total := 0
 	lines := getInput()
 	for _, line := range lines {
-		fmt.Printf("%v (%v): %v\n", cnt, len(line), line)
+		// fmt.Printf("%v (%v): %v\n", cnt, len(line), line)
 		parts := strings.Split(line, " ")
 		strip := parts[0]
 		numbers := parts[1]
@@ -180,13 +198,15 @@ func part02() {
 			strip += "?" + parts[0]
 			numbers += "," + parts[1]
 		}
-		fmt.Printf("%v %v\n", strip, numbers)
+		// fmt.Printf("%v [%v] %v\n", strip, len(strip), numbers)
 		vals := tools.ReadInts(numbers)
 		pumps := makePumps(vals)
-		// fmt.Printf("%v\n", pumps)
+		// for i, p := range pumps {
+		// 	fmt.Printf("%v: %v\n", i, p)
+		// }
 		options := numMatches(pumps, 0, strip+".")
-		fmt.Printf("%v: '%v' - %v arrangement(s)\n", cnt, line, options)
-		fmt.Println("==============================================================")
+		// fmt.Printf("%v: '%v' - %v arrangement(s)\n", cnt, line, options)
+		// fmt.Println("==============================================================")
 		total += options
 		cnt++
 	}
