@@ -37,11 +37,49 @@ type Matrix struct {
 	cols   int
 }
 
+func NewMatrix(rows, cols int) Matrix {
+	m := Matrix{}
+	m.rows = rows
+	m.cols = cols
+	m.fields = make([][]byte, m.rows)
+	for i := range m.fields {
+		m.fields[i] = make([]byte, m.cols)
+	}
+	return m
+}
+
+func (m Matrix) Copy() Matrix {
+	ret := Matrix{}
+	ret.fields = make([][]byte, m.rows)
+	for i := range ret.fields {
+		ret.fields[i] = make([]byte, m.cols)
+		copy(ret.fields[i], m.fields[i])
+	}
+	return ret
+}
+
 func (m Matrix) String() string {
 	var b strings.Builder
 	b.Grow(m.rows * m.cols)
 	for i := 0; i < m.rows; i++ {
 		b.Write(m.fields[i])
+		b.WriteString("\n")
+	}
+	return b.String()
+}
+
+func (m Matrix) NonZeroString() string {
+	var b strings.Builder
+	b.Grow(m.rows * m.cols)
+	for i := 0; i < m.Rows(); i++ {
+		for j := 0; j < m.Cols(); j++ {
+			v, _ := m.Value(j, i)
+			if v == 0 {
+				b.WriteString(".")
+			} else {
+				b.WriteString("#")
+			}
+		}
 		b.WriteString("\n")
 	}
 	return b.String()
@@ -68,6 +106,28 @@ func (m Matrix) Cols() int {
 
 func (m Matrix) Rows() int {
 	return m.rows
+}
+
+func (m Matrix) SumValues() int {
+	val := 0
+	for i := 0; i < m.rows; i++ {
+		for j := 0; j < m.cols; j++ {
+			val += int(m.fields[i][j])
+		}
+	}
+	return val
+}
+
+func (m Matrix) CountNonZero() int {
+	val := 0
+	for i := 0; i < m.rows; i++ {
+		for j := 0; j < m.cols; j++ {
+			if m.fields[i][j] != 0 {
+				val++
+			}
+		}
+	}
+	return val
 }
 
 func (m *Matrix) FindField(c byte) (Position, bool) {
