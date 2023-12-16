@@ -45,12 +45,12 @@ func main() {
 }
 
 type Pump struct {
-	val       int // value
-	length    int // value + 1, as we need a "."
-	front     int // cumulated length of all before
-	back      int // cumulated length of all after
-	re        *regexp.Regexp
-	valchache map[int]int
+	val      int // value
+	length   int // value + 1, as we need a "."
+	front    int // cumulated length of all before
+	back     int // cumulated length of all after
+	re       *regexp.Regexp
+	valcache map[int]int
 }
 
 func (p Pump) String() string {
@@ -69,7 +69,7 @@ func makePumps(vals []int) []Pump {
 		p.front = tools.SumInts(vals[0:i]) + i // there are i elements before i
 		p.back = tools.SumInts(vals[i+1:]) + (len(vals) - (i + 1))
 		p.re = regexp.MustCompile(fmt.Sprintf(`[#\?]{%v}[\?\.]`, p.val))
-		p.valchache = make(map[int]int)
+		p.valcache = make(map[int]int)
 		pumps[i] = p
 	}
 	return pumps
@@ -89,7 +89,7 @@ func numMatches(pumps []Pump, idx int, line string) int {
 	p := pumps[0]
 
 	// check if cached
-	v, ok := p.valchache[idx]
+	v, ok := p.valcache[idx]
 	if ok {
 		return v
 	}
@@ -156,7 +156,7 @@ func numMatches(pumps []Pump, idx int, line string) int {
 	}
 
 	// cache value for next time
-	p.valchache[idx] = retval
+	p.valcache[idx] = retval
 
 	// fmt.Printf("%vReturning %v\n", buf, retval)
 	return retval
