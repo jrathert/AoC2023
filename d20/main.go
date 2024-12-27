@@ -93,6 +93,28 @@ func (pq *pulseQueue) addPulses(sender string, pulseVal int, receivers []module)
 	}
 }
 
+// performs one step processing the queue by processing the top pulse
+// if a rcv_name is given, it checks whether that it the receiver and if yes,
+// returns the name of the sender - otherwise returns an empty string
+// (this mechanism is needed for part 2)
+func (pq *pulseQueue) step(rcv_name string) string {
+	// take first elem of queue
+	p := pq.values[0]
+	pq.values = pq.values[1:]
+	// and send
+	r := p.receiver
+	if p.value == high {
+		cntHigh++
+	} else {
+		cntLow++
+	}
+	r.receive(p.sender, p.value)
+	if rcv_name != "" && p.value == high && r.getName() == rcv_name {
+		return p.sender
+	}
+	return ""
+}
+
 type module interface {
 	getName() string
 	receive(string, int)
@@ -226,6 +248,7 @@ func (b *broadcaster) String() string {
 	return fmt.Sprintf("%v", b.name)
 }
 
+// read all input into a map of modules
 func readModules(pq *pulseQueue, printit bool) map[string]module {
 
 	lines := getInput()
@@ -290,24 +313,7 @@ func readModules(pq *pulseQueue, printit bool) map[string]module {
 	return allModules
 }
 
-func (pq *pulseQueue) step(name string) string {
-	// take first elem of queue
-	p := pq.values[0]
-	pq.values = pq.values[1:]
-	// and send
-	r := p.receiver
-	if p.value == high {
-		cntHigh++
-	} else {
-		cntLow++
-	}
-	r.receive(p.sender, p.value)
-	if name != "" && p.value == high && r.getName() == name {
-		return p.sender
-	}
-	return ""
-}
-
+// part 1: just iterate 1000 button presses
 func part01() {
 	startTime := time.Now()
 
@@ -343,12 +349,16 @@ func findSenders(nm string, allModules map[string]module) []module {
 	return senders
 }
 
-func findTargets(nm string, allModules map[string]module) []module {
-	prev := findSenders(nm, allModules)[0]
-	targets := findSenders(prev.getName(), allModules)
-	return targets
-}
-
+// part 2 is based on some pre-anaylsis:
+//   - rx has exactly one module sending to it - the "sender"
+//   - the sender has a number (4) other modules sending to it. We do not need
+//     to know their names, but the number
+//   - these other modules need to sedn "HIGH" at the same button press
+//   - we expect there are cycles for each of these four modules, and need to understand
+//     what is the least common multiple (ie. when they send "HIGH" altogether)
+//
+// we then press the button until we understand cycle length for all of the (4) modules
+// and calculate their LCM
 func part02() {
 	startTime := time.Now()
 	cnt := 0
@@ -356,14 +366,14 @@ func part02() {
 	pq := pulseQueue{}
 	allModules := readModules(&pq, false)
 
-	sender := findSenders("rx", allModules)[0]
-	targets := findTargets("rx", allModules)
-	// fmt.Printf("Sender: %v, Targets %v\n\n", sender, targets)
+	sender := findSenders("rx", allModules)[0]           // there is just one sender, we know
+	targets := findSenders(sender.getName(), allModules) // we only need to know the number later
+	num_targets := len(targets)
 
 	tgCounter := make(map[string]int)
 	bc := allModules["broadcaster"]
 
-	for len(tgCounter) != len(targets) {
+	for len(tgCounter) != num_targets { // iterate until we have a cycle length for all targets
 		cnt++
 		pq.addPulses("button", low, []module{bc})
 		for len(pq.values) > 0 {
